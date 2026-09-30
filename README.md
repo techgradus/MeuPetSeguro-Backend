@@ -4,8 +4,7 @@ O MeuPet Seguro é um sistema de Smart Home para acompanhar pets à distância. 
 
 # MeuPet Seguro — Backend
 
-API do projeto **MeuPet Seguro**, desenvolvido para a Missão INTERFACE (Mobile + IoT + IA) da
-ExpoTech 2026.2 — Missão 2050: Smart Home & Tecnologias do Futuro.
+API do projeto **MeuPet Seguro**
 
 ## Stack
 
@@ -45,3 +44,29 @@ ExpoTech 2026.2 — Missão 2050: Smart Home & Tecnologias do Futuro.
 - `npm run prisma:generate` — regenera o Prisma Client após mudar o schema
 - `npm run prisma:migrate` — cria uma nova migration a partir de mudanças no schema
 - `npm run prisma:studio` — abre uma interface visual pra ver/editar os dados do banco
+
+## Problemas comuns
+
+**Erro `Cannot find module '.prisma/client/default'` ao rodar `npm run dev`**
+
+Acontece quando o Prisma Client ainda não foi gerado (o `migrate dev` só gera automaticamente
+quando aplica uma migration nova — se ele disser "Already in sync", essa etapa é pulada). Resolve
+rodando:
+
+```
+npx prisma generate
+```
+
+**Se isso não resolver e o banco parecer fora de sincronia com as migrations**
+
+⚠️ Use com cuidado — este comando **apaga todos os dados** do banco e recria as tabelas do zero a
+partir do schema. Só rode se não houver dado importante para preservar (ex: banco local recém
+criado, sem cadastros de teste que valham a pena manter):
+
+```
+npx prisma migrate reset
+```
+
+Se já existir dado importante no banco, **não** rode o `migrate reset` — nesse caso, faça um
+backup antes de qualquer alteração de schema (`pg_dump`) e ajuste a migration manualmente em vez
+de resetar.
