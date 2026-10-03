@@ -10,4 +10,12 @@ export const registerSchema = z.object({
     .regex(/[a-z]/, "Senha deve ter pelo menos uma letra minúscula")
 });
 
+export const loginSchema = z.object({
+  email: z.string().email("E-mail inválido"),
+  password: z.string().min(1, "Senha é obrigatória"),
+});
+
+
+// Export dos tipos para usar em outros arquivos
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type LoginInput = z.infer<typeof loginSchema>;
