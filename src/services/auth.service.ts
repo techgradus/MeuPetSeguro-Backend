@@ -4,20 +4,7 @@ import { RegisterInput } from "../validators/auth.validator";
 import { comparePassword } from "../utils/password";
 import { generateToken } from "../utils/jwt";
 import { LoginInput } from "../validators/auth.validator";
-
-export class EmailAlreadyInUseError extends Error {
-  constructor() {
-    super("E-mail já cadastrado");
-    this.name = "EmailAlreadyInUseError";
-  }
-}
-
-export class InvalidCredentialsError extends Error {
-  constructor() {
-    super("E-mail ou senha incorretos");
-    this.name = "InvalidCredentialsError";
-  }
-}
+import { EmailAlreadyInUseError, InvalidCredentialsError } from "../errors";
 
 export const registerUser = async (data: RegisterInput) => {
   const existingUser = await prisma.user.findUnique({
