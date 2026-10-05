@@ -1,0 +1,44 @@
+name: AI Service
+
+on:
+  push:
+    paths:
+      - "ai-service/**"
+      - ".github/workflows/ai-service.yml"
+  pull_request:
+    paths:
+      - "ai-service/**"
+      - ".github/workflows/ai-service.yml"
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ai-service
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: ai-service/requirements.txt
+
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+
+      - name: Testes unitários e de API
+        run: pytest -v
+
+      - name: Treinar modelo (dados sintéticos)
+        run: python -m scripts.train --synthetic
+
+      - name: Avaliar modelo
+        run: python -m scripts.evaluate
+
+      - name: Publicar modelo treinado
+        uses: actions/upload-artifact@v4
+        with:
+          name: pet-model
+          path: ai-service/models/pet_model.joblib

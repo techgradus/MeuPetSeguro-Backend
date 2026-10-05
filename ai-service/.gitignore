@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.pytest_cache/
+models/*.joblib
+data/*.csv
+tests/performance/*.jtl
+tests/performance/relatorio/
