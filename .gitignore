@@ -5,3 +5,5 @@ npm-debug.log*
 .DS_Store
 coverage/
 *.log
+uploads/*
+!uploads/**/.gitkeep
