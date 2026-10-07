@@ -15,5 +15,26 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  pets Pet[]
+
   @@map("users")
+}
+
+model Pet {
+  id        String    @id @default(uuid())
+  name      String
+  species   String
+  breed     String?
+  birthDate DateTime?
+  weightKg  Float?
+  notes     String?
+  photoUrl  String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  tutorId String
+  tutor   User   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
+
+  @@map("pets")
+  @@index([tutorId])
 }
