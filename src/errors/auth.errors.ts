@@ -11,3 +11,15 @@ export class InvalidCredentialsError extends AppError {
     super("E-mail ou senha incorretos", 401);
   }
 }
+
+export class InvalidTokenError extends AppError {
+  constructor() {
+    super("Token inválido ou expirado", 401);
+  }
+}
+
+export class IncorrectCurrentPasswordError extends AppError {
+  constructor() {
+    super("Senha atual incorreta", 400);
+  }
+}
