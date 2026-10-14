@@ -23,3 +23,9 @@ export class IncorrectCurrentPasswordError extends AppError {
     super("Senha atual incorreta", 400);
   }
 }
+
+export class InvalidResetCodeError extends AppError {
+  constructor() {
+    super("Código inválido ou expirado", 400);
+  }
+}
