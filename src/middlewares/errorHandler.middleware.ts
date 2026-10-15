@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
+import multer from "multer";
 import { AppError } from "../errors";
 
 export const errorHandler = (
@@ -10,6 +11,13 @@ export const errorHandler = (
 ) => {
   if (error instanceof ZodError) {
     return res.status(400).json({ error: error.issues[0].message });
+  }
+
+  if (error instanceof multer.MulterError) {
+    const message = error.code === "LIMIT_FILE_SIZE"
+        ? "Foto muito grande. O limite é 5MB"
+        : "Não foi possível enviar a foto";
+    return res.status(400).json({ error: message });
   }
 
   if (error instanceof AppError) {

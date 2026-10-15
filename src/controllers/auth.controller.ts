@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
-import { registerSchema, loginSchema, changePasswordSchema } from "../validators/auth.validator";
-import { registerUser, loginUser, getCurrentUser, changeUserPassword } from "../services/auth.service";
+import { registerSchema, loginSchema, changePasswordSchema, updateProfileSchema } from "../validators/auth.validator";
+import { registerUser, loginUser, getCurrentUser, changeUserPassword, updateUserProfile } from "../services/auth.service";
 import { forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.validator";
 import { requestPasswordReset, resetUserPassword } from "../services/password-reset.service";
 
@@ -28,6 +28,16 @@ export const login = async (req: Request, res: Response, next: NextFunction) => 
 export const me = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await getCurrentUser(req.userId!);
+    return res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateMe = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = updateProfileSchema.parse(req.body);
+    const user = await updateUserProfile(req.userId!, data);
     return res.status(200).json(user);
   } catch (error) {
     next(error);

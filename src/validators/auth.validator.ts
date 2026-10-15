@@ -33,6 +33,12 @@ export const changePasswordSchema = z
     path: ["newPassword"],
   });
 
+export const updateProfileSchema = z.object({
+  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres").optional(),
+  email: z.string().email("E-mail inválido").optional(),
+  phone: z.union([phoneSchema, z.literal(""), z.null()]).optional(), // "" ou null apagam o telefone
+});
+
 export const forgotPasswordSchema = z.object({
   email: z.string().email("E-mail inválido"),
 });
@@ -46,4 +52,5 @@ export const resetPasswordSchema = z.object({
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
