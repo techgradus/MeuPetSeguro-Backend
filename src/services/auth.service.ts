@@ -1,6 +1,6 @@
 import { prisma } from "../config/prisma";
 import { hashPassword } from "../utils/password";
-import { ChangePasswordInput, RegisterInput } from "../validators/auth.validator";
+import { ChangePasswordInput, RegisterInput, UpdateProfileInput } from "../validators/auth.validator";
 import { comparePassword } from "../utils/password";
 import { generateToken } from "../utils/jwt";
 import { LoginInput } from "../validators/auth.validator";
@@ -59,6 +59,36 @@ export const getCurrentUser = async (userId: string) => {
   }
 
   const { password, ...userWithoutPassword } = user;
+  return userWithoutPassword;
+};
+
+export const updateUserProfile = async (userId: string, data: UpdateProfileInput) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new InvalidTokenError();
+  }
+
+  if (data.email && data.email !== user.email) {
+    const emailInUse = await prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (emailInUse) {
+      throw new EmailAlreadyInUseError();
+    }
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      name: data.name,
+      email: data.email,
+      phone: data.phone === undefined ? undefined : data.phone || null,
+    },
+  });
+
+  const { password, ...userWithoutPassword } = updatedUser;
   return userWithoutPassword;
 };
 

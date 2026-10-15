@@ -1,6 +1,7 @@
 import multer from "multer";
 import path from "path";
 import { randomUUID } from "crypto";
+import { AppError } from "../errors";
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads", "pets");
 
@@ -23,7 +24,7 @@ const fileFilter = (
   if (allowedTypes.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error("Tipo de arquivo não permitido. Use JPEG, PNG ou WEBP."));
+    cb(new AppError("Tipo de arquivo não permitido. Use JPEG, PNG ou WEBP.", 400));
   }
 };
 
