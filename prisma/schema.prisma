@@ -37,6 +37,8 @@ model Pet {
   tutorId String
   tutor   User   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
 
+  devices Device[]
+
   @@map("pets")
   @@index([tutorId])
 }
@@ -53,4 +55,32 @@ model PasswordReset {
 
   @@index([userId])
   @@map("password_resets")
+}
+
+enum DeviceType {
+  COLLAR
+  FOOD_BOWL
+  WATER_BOWL
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+}
+
+model Device {
+  id           String       @id @default(uuid())
+  type         DeviceType
+  deviceCode   String       @unique
+  status       DeviceStatus @default(OFFLINE)
+  batteryLevel Int?
+  lastSyncAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  petId String
+  pet   Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+  @@map("devices")
 }

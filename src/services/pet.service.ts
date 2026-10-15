@@ -28,7 +28,7 @@ export const getPetsByTutor = async (tutorId: string) => {
   });
 };
 
-const findPetOrThrow = async (petId: string, tutorId: string) => {
+export const findPetOrThrow = async (petId: string, tutorId: string) => {
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
 
   if (!pet) {
