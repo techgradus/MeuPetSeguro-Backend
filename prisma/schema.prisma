@@ -37,6 +37,9 @@ model Pet {
   tutorId String
   tutor   User   @relation(fields: [tutorId], references: [id], onDelete: Cascade)
 
+  vaccines Vaccine[]
+  alerts   Alert[]
+
   @@map("pets")
   @@index([tutorId])
 }
@@ -53,4 +56,51 @@ model PasswordReset {
 
   @@index([userId])
   @@map("password_resets")
+}
+
+// Model mínimo para o alerta de vacina. As rotas/CRUD ficam no módulo de vacinas.
+model Vaccine {
+  id         String    @id @default(uuid())
+  name       String
+  appliedAt  DateTime
+  nextDoseAt DateTime?
+  notes      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  petId String
+  pet   Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  alerts Alert[]
+
+  @@index([petId])
+  @@map("vaccines")
+}
+
+enum AlertType {
+  LOW_FOOD
+  LOW_WATER
+  INACTIVITY
+  ACTIVITY_ANOMALY
+  DEVICE_OFFLINE
+  VACCINE_DUE
+}
+
+model Alert {
+  id        String    @id @default(uuid())
+  type      AlertType
+  message   String
+  read      Boolean   @default(false)
+  createdAt DateTime  @default(now())
+
+  petId String
+  pet   Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  // Preenchido só em alertas de vacina; evita gerar dois alertas para a mesma vacina
+  vaccineId String?
+  vaccine   Vaccine? @relation(fields: [vaccineId], references: [id], onDelete: Cascade)
+
+  @@index([petId])
+  @@index([vaccineId])
+  @@map("alerts")
 }
