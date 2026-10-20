@@ -2,6 +2,8 @@ import { prisma } from "../config/prisma";
 import { CreatePetInput, UpdatePetInput } from "../validators/pet.validator";
 import { PetNotFoundError, PetAccessDeniedError } from "../errors";
 
+const petInclude = { devices: { orderBy: { createdAt: "asc" as const } } };
+
 const buildPhotoUrl = (filename?: string): string | undefined => {
   if (!filename) return undefined;
   return `/uploads/pets/${filename}`;
@@ -18,6 +20,7 @@ export const createPet = async (
       tutorId,
       photoUrl: buildPhotoUrl(photoFilename),
     },
+    include: petInclude,
   });
 };
 
@@ -25,10 +28,11 @@ export const getPetsByTutor = async (tutorId: string) => {
   return prisma.pet.findMany({
     where: { tutorId },
     orderBy: { createdAt: "desc" },
+    include: petInclude,
   });
 };
 
-const findPetOrThrow = async (petId: string, tutorId: string) => {
+export const findPetOrThrow = async (petId: string, tutorId: string) => {
   const pet = await prisma.pet.findUnique({ where: { id: petId } });
 
   if (!pet) {
@@ -43,7 +47,8 @@ const findPetOrThrow = async (petId: string, tutorId: string) => {
 };
 
 export const getPetById = async (petId: string, tutorId: string) => {
-  return findPetOrThrow(petId, tutorId);
+  await findPetOrThrow(petId, tutorId);
+  return prisma.pet.findUnique({ where: { id: petId }, include: petInclude });
 };
 
 export const updatePet = async (
@@ -60,6 +65,7 @@ export const updatePet = async (
       ...data,
       ...(photoFilename ? { photoUrl: buildPhotoUrl(photoFilename) } : {}),
     },
+    include: petInclude,
   });
 };
 
