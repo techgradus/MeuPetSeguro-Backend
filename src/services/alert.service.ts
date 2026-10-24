@@ -9,7 +9,7 @@ const VACCINE_DUE_DAYS = 7;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const formatDate = (date: Date) =>
-  date.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" });
+  date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 
 const buildVaccineMessage = (petName: string, vaccineName: string, nextDoseAt: Date) => {
   const daysLeft = Math.ceil((nextDoseAt.getTime() - Date.now()) / DAY_MS);
