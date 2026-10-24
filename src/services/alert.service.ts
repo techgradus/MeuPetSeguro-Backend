@@ -11,8 +11,15 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const formatDate = (date: Date) =>
   date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 
+const daysUntil = (nextDoseAt: Date) => {
+  const todayBR = new Date(
+    new Date().toLocaleDateString("en-CA", { timeZone: "America/Sao_Paulo" })
+  );
+  return Math.round((nextDoseAt.getTime() - todayBR.getTime()) / DAY_MS);
+};
+
 const buildVaccineMessage = (petName: string, vaccineName: string, nextDoseAt: Date) => {
-  const daysLeft = Math.ceil((nextDoseAt.getTime() - Date.now()) / DAY_MS);
+  const daysLeft = daysUntil(nextDoseAt);
 
   if (daysLeft < 0) {
     return `A vacina ${vaccineName} de ${petName} está atrasada desde ${formatDate(nextDoseAt)}`;
@@ -67,11 +74,23 @@ export const getAlertsByTutor = async (tutorId: string, query: ListAlertsQuery) 
 
   await generateVaccineAlerts(tutorId, query.petId);
 
-  return prisma.alert.findMany({
+  const alerts = await prisma.alert.findMany({
     where: { pet: { tutorId }, ...(query.petId ? { petId: query.petId } : {}) },
-    include: { pet: { select: { id: true, name: true } } },
+    include: {
+      pet: { select: { id: true, name: true } },
+      vaccine: { select: { name: true, nextDoseAt: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
+
+  // alertas de vacina têm a mensagem refeita a cada consulta, com a data de hoje
+  return alerts.map(({ vaccine, ...alert }) => ({
+    ...alert,
+    message:
+      alert.type === AlertType.VACCINE_DUE && vaccine?.nextDoseAt
+        ? buildVaccineMessage(alert.pet.name, vaccine.name, vaccine.nextDoseAt)
+        : alert.message,
+  }));
 };
 
 const findAlertOrThrow = async (alertId: string, tutorId: string) => {
