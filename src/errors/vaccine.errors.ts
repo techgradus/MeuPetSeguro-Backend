@@ -13,3 +13,9 @@ export class VaccineAccessDeniedError extends AppError {
     super("Você não tem permissão para acessar esta vacina", 403);
   }
 }
+
+export class InvalidVaccineDatesError extends AppError {
+  constructor() {
+    super("A próxima dose deve ser depois da data de aplicação", 400);
+  }
+}

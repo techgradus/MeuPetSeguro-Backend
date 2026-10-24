@@ -3,9 +3,15 @@ import {
   CreateVaccineInput,
   UpdateVaccineInput,
 } from "../validators/vaccine.validator";
-import { VaccineNotFoundError } from "../errors";
+import { AlertType } from "@prisma/client";
+import { VaccineNotFoundError, InvalidVaccineDatesError } from "../errors";
 import { findPetOrThrow } from "./pet.service";
 
+const assertDoseOrder = (appliedAt: Date, nextDoseAt?: Date | null) => {
+  if (nextDoseAt && nextDoseAt <= appliedAt) {
+    throw new InvalidVaccineDatesError();
+  }
+};
 
 export const createVaccine = async (
   petId: string,
@@ -13,6 +19,7 @@ export const createVaccine = async (
   data: CreateVaccineInput
 ) => {
   await findPetOrThrow(petId, tutorId);
+  assertDoseOrder(data.appliedAt, data.nextDoseAt);
 
 
   return prisma.vaccine.create({
@@ -65,12 +72,22 @@ export const updateVaccine = async (
   tutorId: string,
   data: UpdateVaccineInput
 ) => {
-  await getVaccineById(vaccineId, tutorId);
+  const current = await getVaccineById(vaccineId, tutorId);
+
+  // usa o valor novo ou, se o campo não veio, o que já estava salvo
+  assertDoseOrder(
+    data.appliedAt ?? current.appliedAt,
+    data.nextDoseAt === undefined ? current.nextDoseAt : data.nextDoseAt
+  );
 
 
-  return prisma.vaccine.update({
-    where: { id: vaccineId },
-    data,
+  return prisma.$transaction(async (tx) => {
+    if (data.nextDoseAt !== undefined || data.appliedAt !== undefined) {
+      await tx.alert.deleteMany({
+        where: { vaccineId, type: AlertType.VACCINE_DUE },
+      });
+    }
+    return tx.vaccine.update({ where: { id: vaccineId }, data });
   });
 };
 
