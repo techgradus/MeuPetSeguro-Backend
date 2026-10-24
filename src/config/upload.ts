@@ -1,19 +1,10 @@
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { randomUUID } from "crypto";
 import { AppError } from "../errors";
 
-const UPLOAD_DIR = path.join(__dirname, "..", "..", "uploads", "pets");
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const extension = path.extname(file.originalname);
-    cb(null, `${randomUUID()}${extension}`);
-  },
-});
+export const UPLOAD_ROOT = path.join(__dirname, "..", "..", "uploads");
 
 const fileFilter = (
   req: Express.Request,
@@ -28,8 +19,21 @@ const fileFilter = (
   }
 };
 
-export const petPhotoUpload = multer({
-  storage,
-  fileFilter,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
-});
+const createImageUpload = (folder: string) =>
+  multer({
+    storage: multer.diskStorage({
+      destination: (req, file, cb) => {
+        const dir = path.join(UPLOAD_ROOT, folder);
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+      },
+      filename: (req, file, cb) => {
+        cb(null, `${randomUUID()}${path.extname(file.originalname)}`);
+      },
+    }),
+    fileFilter,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  });
+
+export const petPhotoUpload = createImageUpload("pets");
+export const userPhotoUpload = createImageUpload("users");

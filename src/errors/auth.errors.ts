@@ -29,3 +29,9 @@ export class InvalidResetCodeError extends AppError {
     super("Código inválido ou expirado", 400);
   }
 }
+
+export class PhotoRequiredError extends AppError {
+  constructor() {
+    super('Envie uma imagem no campo "photo"', 400);
+  }
+}

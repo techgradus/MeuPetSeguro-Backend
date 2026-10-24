@@ -1,8 +1,9 @@
 import { Request, Response, NextFunction } from "express";
 import { registerSchema, loginSchema, changePasswordSchema, updateProfileSchema } from "../validators/auth.validator";
-import { registerUser, loginUser, getCurrentUser, changeUserPassword, updateUserProfile } from "../services/auth.service";
+import { registerUser, loginUser, getCurrentUser, changeUserPassword, updateUserProfile, updateUserPhoto, removeUserPhoto } from "../services/auth.service";
 import { forgotPasswordSchema, resetPasswordSchema } from "../validators/auth.validator";
 import { requestPasswordReset, resetUserPassword } from "../services/password-reset.service";
+import { PhotoRequiredError } from "../errors";
 
 export const register = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -71,6 +72,27 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     const { email, code, newPassword } = resetPasswordSchema.parse(req.body);
     await resetUserPassword(email, code, newPassword);
     return res.status(200).json({ message: "Senha redefinida com sucesso" });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateMyPhoto = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.file) {
+      throw new PhotoRequiredError();
+    }
+    const user = await updateUserPhoto(req.userId!, req.file.filename);
+    return res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeMyPhoto = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const user = await removeUserPhoto(req.userId!);
+    return res.status(200).json(user);
   } catch (error) {
     next(error);
   }

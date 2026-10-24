@@ -5,6 +5,11 @@ import { comparePassword } from "../utils/password";
 import { generateToken } from "../utils/jwt";
 import { LoginInput } from "../validators/auth.validator";
 import { EmailAlreadyInUseError, InvalidCredentialsError , InvalidTokenError, IncorrectCurrentPasswordError} from "../errors";
+import path from "path";
+import { unlink } from "fs/promises";
+import { UPLOAD_ROOT } from "../config/upload";
+
+const USER_PHOTO_DIR = path.join(UPLOAD_ROOT, "users");
 
 export const registerUser = async (data: RegisterInput) => {
   const existingUser = await prisma.user.findUnique({
@@ -117,4 +122,52 @@ export const changeUserPassword = async (
     where: { id: userId },
     data: { password: hashedPassword },
   });
+};
+
+const deleteUserPhotoFile = async (photoUrlOrFilename: string | null) => {
+  if (!photoUrlOrFilename) return;
+  const filePath = path.join(USER_PHOTO_DIR, path.basename(photoUrlOrFilename));
+  await unlink(filePath).catch(() => undefined); 
+};
+
+export const updateUserPhoto = async (userId: string, filename: string) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    await deleteUserPhotoFile(filename);
+    throw new InvalidTokenError();
+  }
+
+  const updatedUser = await prisma.user
+    .update({
+      where: { id: userId },
+      data: { photoUrl: `/uploads/users/${filename}` },
+    })
+    .catch(async (error) => {
+      await deleteUserPhotoFile(filename);
+      throw error;
+    });
+
+  await deleteUserPhotoFile(user.photoUrl); 
+
+  const { password, ...userWithoutPassword } = updatedUser;
+  return userWithoutPassword;
+};
+
+export const removeUserPhoto = async (userId: string) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new InvalidTokenError();
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: { photoUrl: null },
+  });
+
+  await deleteUserPhotoFile(user.photoUrl);
+
+  const { password, ...userWithoutPassword } = updatedUser;
+  return userWithoutPassword;
 };
