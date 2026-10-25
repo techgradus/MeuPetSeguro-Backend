@@ -85,8 +85,32 @@ model Device {
   petId String
   pet   Pet    @relation(fields: [petId], references: [id], onDelete: Cascade)
 
+  readings SensorReading[]
+
   @@index([petId])
   @@map("devices")
+}
+
+enum ActivityLevel {
+  REPOUSO
+  LEVE
+  MODERADA
+  INTENSA
+}
+
+model SensorReading {
+  id            String         @id @default(uuid())
+  activityLevel ActivityLevel?
+  intensity     Float?
+  weightGrams   Float?
+  recordedAt    DateTime
+  createdAt     DateTime       @default(now())
+
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, recordedAt])
+  @@map("sensor_readings")
 }
 
 
