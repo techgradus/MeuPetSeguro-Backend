@@ -70,3 +70,14 @@ npx prisma migrate reset
 Se já existir dado importante no banco, **não** rode o `migrate reset` — nesse caso, faça um
 backup antes de qualquer alteração de schema (`pg_dump`) e ajuste a migration manualmente em vez
 de resetar.
+## Qualidade (QA)
+
+- **Testes unitários e de API:** `npm test` (ou `npm run test:coverage` para o relatório de cobertura). Ficam em `tests/` e usam
+  Vitest + Supertest com o Prisma simulado, então não precisam de banco.
+- **Teste de desempenho:** plano do JMeter em `tests/performance/api.jmx`. Ele cria um tutor, um pet e uma vacina vencendo e depois
+  simula usuários simultâneos fazendo login e abrindo pets e alertas. Para rodar localmente, com a API no ar:
+  ```
+  jmeter -n -t tests/performance/api.jmx -l resultados.jtl -e -o relatorio-jmeter -Jthreads=20 -Jloops=10
+  ```
+- **CI/CD:** o workflow `.github/workflows/backend.yml` roda os testes a cada push e, em seguida, o JMeter contra um Postgres
+  temporário, publicando os relatórios de cobertura e de desempenho como artefatos.
