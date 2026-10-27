@@ -11,6 +11,8 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "mqtt:simulate": "tsx simulator/index.ts",
+    "sim:history": "tsx simulator/history.ts",
+    "ai:train": "tsx scripts/ai-train.ts",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
   },

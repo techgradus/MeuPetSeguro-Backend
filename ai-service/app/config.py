@@ -10,7 +10,7 @@ MODEL_PATH = MODELS_DIR / "pet_model.joblib"
 
 TIMEZONE = os.getenv("AI_TIMEZONE", "America/Sao_Paulo")
 
-FOOD_BOWL_CAPACITY_G = float(os.getenv("FOOD_BOWL_CAPACITY_G", "300"))
+FOOD_BOWL_CAPACITY_G = float(os.getenv("FOOD_BOWL_CAPACITY_G", "900"))
 WATER_BOWL_CAPACITY_ML = float(os.getenv("WATER_BOWL_CAPACITY_ML", "1000"))
 # Abaixo dessa fração da capacidade o pote é considerado "quase vazio"
 LOW_LEVEL_RATIO = 0.15

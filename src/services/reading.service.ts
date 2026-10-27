@@ -8,7 +8,7 @@ const LOW_WATER_THRESHOLD_G = 100;
 const INACTIVITY_WINDOW_MIN = 60;
 
 // Evita recriar o mesmo alerta a cada leitura (ex.: pote continua baixo por horas).
-const createAlertIfNotDuplicate = async (
+export const createAlertIfNotDuplicate = async (
   petId: string,
   type: AlertType,
   message: string,
