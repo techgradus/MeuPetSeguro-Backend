@@ -1,0 +1,115 @@
+name: Backend
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    name: Testes unitários e de API
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prisma generate
+
+      - name: Verificação de tipos
+        run: npx tsc --noEmit
+
+      - name: Testes (Vitest)
+        run: npm run test:coverage
+
+      - name: Publicar relatório de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-cobertura
+          path: coverage
+          retention-days: 14
+
+  performance:
+    name: Teste de desempenho (JMeter)
+    needs: tests
+    runs-on: ubuntu-24.04
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: meupet
+          POSTGRES_PASSWORD: meupet
+          POSTGRES_DB: meupet
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U meupet"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://meupet:meupet@localhost:5432/meupet?schema=public
+      JWT_SECRET: segredo-do-ci
+      SUPABASE_URL: https://ci-placeholder.supabase.co
+      SUPABASE_SECRET_KEY: ci-placeholder-key
+      SUPABASE_BUCKET: ci-placeholder-bucket
+      PORT: 3000
+      JMETER_VERSION: 5.6.3
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - run: npm ci
+
+      - name: Criar tabelas no banco
+        run: npx prisma migrate deploy && npx prisma generate
+
+      - name: Subir a API
+        run: |
+          npm run build
+          nohup npm start > api.log 2>&1 &
+          for i in $(seq 30); do curl -sf http://127.0.0.1:3000/api/health && exit 0; sleep 1; done
+          cat api.log; exit 1
+
+      - name: Instalar JMeter
+        run: |
+          curl -sSfL "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz" | tar xz
+          echo "$PWD/apache-jmeter-${JMETER_VERSION}/bin" >> "$GITHUB_PATH"
+
+      - name: Rodar teste de carga
+        run: jmeter -n -t tests/performance/api.jmx -l resultados.jtl -e -o relatorio-jmeter -Jthreads=20 -Jloops=10
+
+      - name: Verificar taxa de erro
+        run: |
+          total=$(tail -n +2 resultados.jtl | wc -l)
+          falhas=$(tail -n +2 resultados.jtl | grep -c ',false,' || true)
+          echo "Requisições: $total | Falhas: $falhas"
+          if [ "$total" -eq 0 ] || [ $((falhas * 100)) -gt "$total" ]; then
+            echo "::error::Taxa de erro acima de 1%"; exit 1
+          fi
+
+      - name: Publicar relatório do JMeter
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: relatorio-jmeter
+          path: |
+            relatorio-jmeter
+            resultados.jtl
+            api.log
+          retention-days: 14

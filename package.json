@@ -10,11 +10,16 @@
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
-    "mqtt:simulate": "tsx simulator/index.ts"
+    "mqtt:simulate": "tsx simulator/index.ts",
+    "sim:history": "tsx simulator/history.ts",
+    "ai:train": "tsx scripts/ai-train.ts",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
+    "@supabase/supabase-js": "^2.118.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -35,9 +40,13 @@
     "@types/node": "^20.14.15",
     "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.11.10",
+    "@types/supertest": "^7.2.1",
+    "@vitest/coverage-v8": "^3.2.7",
     "prisma": "^7.2.0",
+    "supertest": "^7.3.1",
     "tsx": "^4.23.15",
-    "typescript": "^5.5.4"
+    "typescript": "^5.5.4",
+    "vitest": "^3.2.7"
   },
   "engines": {
     "node": ">=18"

@@ -7,9 +7,8 @@ import { LoginInput } from "../validators/auth.validator";
 import { EmailAlreadyInUseError, InvalidCredentialsError , InvalidTokenError, IncorrectCurrentPasswordError} from "../errors";
 import path from "path";
 import { unlink } from "fs/promises";
-import { UPLOAD_ROOT } from "../config/upload";
+import { uploadImage, deleteImage } from "./storage.service";
 
-const USER_PHOTO_DIR = path.join(UPLOAD_ROOT, "users");
 
 export const registerUser = async (data: RegisterInput) => {
   const existingUser = await prisma.user.findUnique({
@@ -124,31 +123,23 @@ export const changeUserPassword = async (
   });
 };
 
-const deleteUserPhotoFile = async (photoUrlOrFilename: string | null) => {
-  if (!photoUrlOrFilename) return;
-  const filePath = path.join(USER_PHOTO_DIR, path.basename(photoUrlOrFilename));
-  await unlink(filePath).catch(() => undefined); 
-};
-
-export const updateUserPhoto = async (userId: string, filename: string) => {
+export const updateUserPhoto = async (userId: string, file: Express.Multer.File) => {
   const user = await prisma.user.findUnique({ where: { id: userId } });
 
   if (!user) {
-    await deleteUserPhotoFile(filename);
     throw new InvalidTokenError();
   }
 
+  const photoUrl = await uploadImage("users", file);
+
   const updatedUser = await prisma.user
-    .update({
-      where: { id: userId },
-      data: { photoUrl: `/uploads/users/${filename}` },
-    })
+    .update({ where: { id: userId }, data: { photoUrl } })
     .catch(async (error) => {
-      await deleteUserPhotoFile(filename);
+      await deleteImage(photoUrl);
       throw error;
     });
 
-  await deleteUserPhotoFile(user.photoUrl); 
+  await deleteImage(user.photoUrl);
 
   const { password, ...userWithoutPassword } = updatedUser;
   return userWithoutPassword;
@@ -166,7 +157,7 @@ export const removeUserPhoto = async (userId: string) => {
     data: { photoUrl: null },
   });
 
-  await deleteUserPhotoFile(user.photoUrl);
+  await deleteImage(user.photoUrl);
 
   const { password, ...userWithoutPassword } = updatedUser;
   return userWithoutPassword;
