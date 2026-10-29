@@ -56,6 +56,9 @@ jobs:
     env:
       DATABASE_URL: postgresql://meupet:meupet@localhost:5432/meupet?schema=public
       JWT_SECRET: segredo-do-ci
+      SUPABASE_URL: https://ci-placeholder.supabase.co
+      SUPABASE_SECRET_KEY: ci-placeholder-key
+      SUPABASE_BUCKET: ci-placeholder-bucket
       PORT: 3000
       JMETER_VERSION: 5.6.3
     steps:
