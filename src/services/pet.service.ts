@@ -1,6 +1,7 @@
 import { prisma } from "../config/prisma";
 import { CreatePetInput, UpdatePetInput } from "../validators/pet.validator";
 import { PetNotFoundError, PetAccessDeniedError } from "../errors";
+import { uploadImage, deleteImage } from "./storage.service";
 
 const petInclude = { devices: { orderBy: { createdAt: "asc" as const } } };
 
@@ -12,15 +13,20 @@ const buildPhotoUrl = (filename?: string): string | undefined => {
 export const createPet = async (
   tutorId: string,
   data: CreatePetInput,
-  photoFilename?: string
+  photo?: Express.Multer.File
 ) => {
+  const photoUrl = photo ? await uploadImage("pets", photo) : undefined;
+
   return prisma.pet.create({
     data: {
       ...data,
       tutorId,
-      photoUrl: buildPhotoUrl(photoFilename),
+      ...(photoUrl ? { photoUrl } : {}),
     },
     include: petInclude,
+  }).catch(async (error) => {
+    await deleteImage(photoUrl);
+    throw error;
   });
 };
 
@@ -55,21 +61,28 @@ export const updatePet = async (
   petId: string,
   tutorId: string,
   data: UpdatePetInput,
-  photoFilename?: string
+  photo?: Express.Multer.File
 ) => {
-  await findPetOrThrow(petId, tutorId);
+  const pet = await findPetOrThrow(petId, tutorId);
+  const photoUrl = photo ? await uploadImage("pets", photo) : undefined;
 
-  return prisma.pet.update({
-    where: { id: petId },
-    data: {
-      ...data,
-      ...(photoFilename ? { photoUrl: buildPhotoUrl(photoFilename) } : {}),
-    },
-    include: petInclude,
-  });
+  const updated = await prisma.pet
+    .update({
+      where: { id: petId },
+      data: { ...data, ...(photoUrl ? { photoUrl } : {}) },
+      include: petInclude,
+    })
+    .catch(async (error) => {
+      await deleteImage(photoUrl);
+      throw error;
+    });
+
+  if (photoUrl) await deleteImage(pet.photoUrl);
+  return updated;
 };
 
 export const deletePet = async (petId: string, tutorId: string) => {
-  await findPetOrThrow(petId, tutorId);
-  return prisma.pet.delete({ where: { id: petId } });
+  const pet = await findPetOrThrow(petId, tutorId);
+  await prisma.pet.delete({ where: { id: petId } });
+  await deleteImage(pet.photoUrl);
 };

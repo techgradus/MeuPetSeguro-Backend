@@ -82,7 +82,7 @@ export const updateMyPhoto = async (req: Request, res: Response, next: NextFunct
     if (!req.file) {
       throw new PhotoRequiredError();
     }
-    const user = await updateUserPhoto(req.userId!, req.file.filename);
+    const user = await updateUserPhoto(req.userId!, req.file);
     return res.status(200).json(user);
   } catch (error) {
     next(error);

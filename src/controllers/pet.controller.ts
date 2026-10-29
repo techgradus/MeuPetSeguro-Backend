@@ -5,7 +5,7 @@ import { createPet, getPetsByTutor, getPetById, deletePet, updatePet} from "../s
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = createPetSchema.parse(req.body);
-    const pet = await createPet(req.userId!, data, req.file?.filename);
+    const pet = await createPet(req.userId!, data, req.file);
     return res.status(201).json(pet);
   } catch (error) {
     next(error);
@@ -33,7 +33,7 @@ export const getById = async (req: Request, res: Response, next: NextFunction) =
 export const update = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = updatePetSchema.parse(req.body);
-    const pet = await updatePet(req.params.id, req.userId!, data, req.file?.filename);
+    const pet = await updatePet(req.params.id, req.userId!, data, req.file);
     return res.status(200).json(pet);
   } catch (error) {
     next(error);
