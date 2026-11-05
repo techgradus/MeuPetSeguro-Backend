@@ -13,38 +13,21 @@
 import "dotenv/config";
 import { DeviceType, ActivityLevel, Prisma } from "@prisma/client";
 import { prisma } from "../src/config/prisma";
+import {
+  BRAZIL_UTC_OFFSET_H,
+  FOOD_CAPACITY_G,
+  FOOD_PER_DAY_G,
+  HOURLY_PROFILE,
+  INTENSITY_RANGE,
+  MEALS_H,
+  rand,
+  round1,
+  Scenario,
+  WATER_CAPACITY_G,
+  WATER_PER_DAY_G,
+} from "./routine";
 
 const STEP_MIN = 5;
-const BRAZIL_UTC_OFFSET_H = -3; // horário de Brasília (sem horário de verão desde 2019)
-
-const FOOD_CAPACITY_G = 900;
-const WATER_CAPACITY_G = 1000;
-const FOOD_PER_DAY_G = 300;
-const WATER_PER_DAY_G = 600;
-const MEALS_H = [7, 12.5, 19];
-
-// Nível de atividade por hora do dia (0h a 23h), mesma rotina do simulador da coleira
-const HOURLY_PROFILE: ActivityLevel[] = [
-  "REPOUSO", "REPOUSO", "REPOUSO", "REPOUSO", "REPOUSO", "REPOUSO",
-  "MODERADA", "INTENSA", "MODERADA",
-  "LEVE", "LEVE", "LEVE",
-  "REPOUSO", "REPOUSO",
-  "LEVE", "MODERADA", "LEVE", "LEVE",
-  "INTENSA", "MODERADA",
-  "LEVE", "REPOUSO", "REPOUSO", "REPOUSO",
-];
-
-const INTENSITY_RANGE: Record<ActivityLevel, [number, number]> = {
-  REPOUSO: [0, 0.1],
-  LEVE: [0.1, 0.35],
-  MODERADA: [0.35, 0.65],
-  INTENSA: [0.65, 1],
-};
-
-type Scenario = "normal" | "doente" | "sede";
-
-const rand = (min: number, max: number) => min + Math.random() * (max - min);
-const round1 = (n: number) => Math.round(n * 10) / 10;
 
 const parseArgs = () => {
   const args = process.argv.slice(2);

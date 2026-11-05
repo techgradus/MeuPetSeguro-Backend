@@ -6,6 +6,7 @@ import alertRoutes from "./alert.routes";
 import deviceRoutes from "./device.routes";
 import insightRoutes from "./insight.routes";
 import vaccineRoutes from "./vaccine.routes";
+import pushRoutes from "./push.routes";
 
 import { authMiddleware } from "../middlewares/auth.middleware";
 
@@ -17,6 +18,7 @@ router.use("/pets/:petId/devices", deviceRoutes);
 router.use("/pets/:petId/insights", insightRoutes);
 router.use("/pets", petRoutes);
 router.use("/alerts", alertRoutes);
+router.use("/push-tokens", pushRoutes);
 router.use(vaccineRoutes);
 
 export default router;
