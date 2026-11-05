@@ -3,6 +3,7 @@ import { prisma } from "../config/prisma";
 import { ListAlertsQuery } from "../validators/alert.validator";
 import { AlertNotFoundError, AlertAccessDeniedError } from "../errors";
 import { findPetOrThrow } from "./pet.service";
+import { notifyAlert } from "./push.service";
 
 // Quantos dias antes da próxima dose a vacina já conta como "vencendo"
 const VACCINE_DUE_DAYS = 7;
@@ -32,17 +33,24 @@ const buildVaccineMessage = (petName: string, vaccineName: string, nextDoseAt: D
 
 // Checagem sob demanda: roda sempre que o tutor lista os alertas.
 // Cria no máximo um alerta por vacina (mesmo depois de lido), para não repetir o aviso.
-const generateVaccineAlerts = async (tutorId: string, petId?: string) => {
+// Sem tutorId = varre todos os tutores (usado pelo job diário, que também manda o push).
+export const generateVaccineAlerts = async ({
+  tutorId,
+  petId,
+  notify = false,
+}: { tutorId?: string; petId?: string; notify?: boolean } = {}) => {
   const limit = new Date(Date.now() + VACCINE_DUE_DAYS * DAY_MS);
 
   const dueVaccines = await prisma.vaccine.findMany({
     where: {
       nextDoseAt: { lte: limit },
       alerts: { none: { type: AlertType.VACCINE_DUE } },
-      pet: { tutorId, ...(petId ? { id: petId } : {}) },
+      pet: { ...(tutorId ? { tutorId } : {}), ...(petId ? { id: petId } : {}) },
     },
     include: { pet: { select: { name: true } } },
   });
+
+  let created = 0;
 
   for (const vaccine of dueVaccines) {
     // Se já existe uma dose mais recente da mesma vacina, essa já foi resolvida
@@ -56,7 +64,7 @@ const generateVaccineAlerts = async (tutorId: string, petId?: string) => {
 
     if (newerDose) continue;
 
-    await prisma.alert.create({
+    const alert = await prisma.alert.create({
       data: {
         type: AlertType.VACCINE_DUE,
         message: buildVaccineMessage(vaccine.pet.name, vaccine.name, vaccine.nextDoseAt!),
@@ -64,7 +72,12 @@ const generateVaccineAlerts = async (tutorId: string, petId?: string) => {
         vaccineId: vaccine.id,
       },
     });
+
+    created += 1;
+    if (notify) await notifyAlert(alert);
   }
+
+  return created;
 };
 
 export const getAlertsByTutor = async (tutorId: string, query: ListAlertsQuery) => {
@@ -72,7 +85,7 @@ export const getAlertsByTutor = async (tutorId: string, query: ListAlertsQuery) 
     await findPetOrThrow(query.petId, tutorId);
   }
 
-  await generateVaccineAlerts(tutorId, query.petId);
+  await generateVaccineAlerts({ tutorId, petId: query.petId });
 
   const alerts = await prisma.alert.findMany({
     where: { pet: { tutorId }, ...(query.petId ? { petId: query.petId } : {}) },

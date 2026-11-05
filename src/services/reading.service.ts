@@ -1,6 +1,7 @@
 import { AlertType, DeviceType, DeviceStatus } from "@prisma/client";
 import { prisma } from "../config/prisma";
 import { TelemetryInput, StatusInput } from "../validators/reading.validator";
+import { notifyAlert } from "./push.service";
 
 // Limiares simples pra MVP — ajustar depois com dado real (ou deixar configurável por pet).
 const LOW_FOOD_THRESHOLD_G = 80;
@@ -20,7 +21,10 @@ export const createAlertIfNotDuplicate = async (
 
   if (recent) return;
 
-  await prisma.alert.create({ data: { petId, type, message } });
+  const alert = await prisma.alert.create({ data: { petId, type, message } });
+
+  // Avisa o tutor no celular (não bloqueia nem quebra a ingestão se o push falhar)
+  void notifyAlert(alert);
 };
 
 export const ingestTelemetry = async (deviceCode: string, data: TelemetryInput) => {

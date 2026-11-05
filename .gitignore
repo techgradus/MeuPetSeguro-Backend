@@ -7,3 +7,4 @@ coverage/
 *.log
 uploads/*
 !uploads/**/.gitkeep
+meu-pet-seguro-e4da9-firebase-adminsdk-fbsvc-aff6cd6816.json
