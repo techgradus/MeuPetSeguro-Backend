@@ -1,6 +1,9 @@
 
 const OFFSET_H = Number(process.env.APP_UTC_OFFSET_H ?? -3);
 
+/** Diferença do horário local para o UTC, em horas (padrão: Brasília, -3). */
+export const UTC_OFFSET_H = OFFSET_H;
+
 export const HOUR_MS = 60 * 60 * 1000;
 export const DAY_MS = 24 * HOUR_MS;
 
