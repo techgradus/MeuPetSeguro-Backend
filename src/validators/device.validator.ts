@@ -11,3 +11,15 @@ export const createDeviceSchema = z.object({
 });
 
 export type CreateDeviceInput = z.infer<typeof createDeviceSchema>;
+
+export const STATION_PREFIX = "ESTACAO-";
+
+export const createStationSchema = z.object({
+  stationCode: z
+    .string()
+    .trim()
+    .transform((code) => code.toUpperCase())
+    .pipe(z.string().regex(/^ESTACAO-[A-Z0-9]{4,12}$/, "Código da estação inválido. Exemplo: ESTACAO-1A2B3C")),
+});
+
+export type CreateStationInput = z.infer<typeof createStationSchema>;

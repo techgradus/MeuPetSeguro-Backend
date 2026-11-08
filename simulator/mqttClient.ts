@@ -36,8 +36,10 @@ export const connectSimulator = (label: string): MqttClient => {
   client.on("error", (err) => {
     const reason = describeError(err);
     const hint = reason.includes("ECONNREFUSED")
-      ? ` — nenhum broker respondendo em ${url}. Inicie o Mosquitto (ou ajuste MQTT_BROKER_URL).`
-      : "";
+      ? ` — nenhum broker respondendo em ${url}.`
+      : /not authorized|bad user ?name|password/i.test(reason)
+        ? " — o broker recusou o login."
+        : "";
     console.error(`[sim:${label}] erro: ${reason}${hint}`);
   });
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { prismaMock } from "../prismaMock";
 import { createVaccine, updateVaccine } from "../../src/services/vaccine.service";
-import { createDevice } from "../../src/services/device.service";
+import { createDevice, createStation } from "../../src/services/device.service";
 import { daysFromNow, OTHER_TUTOR_ID, pet, PET_ID, TUTOR_ID } from "../helpers";
 
 describe("vaccine.service", () => {
@@ -88,5 +88,58 @@ describe("device.service", () => {
     prismaMock.device.create.mockRejectedValue({ code: "P2002" });
 
     await expect(createDevice(PET_ID, TUTOR_ID, data)).rejects.toMatchObject({ statusCode: 409 });
+  });
+});
+
+describe("device.service — estação de potes", () => {
+  const STATION = "ESTACAO-1A2B3C";
+
+  const setupOk = () => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet());
+    prismaMock.device.findMany.mockResolvedValue([]);
+    prismaMock.device.findFirst.mockResolvedValue(null);
+    prismaMock.device.create.mockImplementation(async ({ data }: { data: object }) => ({ id: "d", ...data }));
+    prismaMock.$transaction.mockImplementation(async (ops: Promise<unknown>[]) => Promise.all(ops));
+  };
+
+  it("vincula pote de comida e pote de água de uma vez, com códigos derivados do ID", async () => {
+    setupOk();
+
+    const result = await createStation(PET_ID, TUTOR_ID, STATION);
+
+    expect(result.stationCode).toBe(STATION);
+    expect(prismaMock.device.create).toHaveBeenCalledTimes(2);
+    expect(prismaMock.device.create).toHaveBeenCalledWith({
+      data: { type: "FOOD_BOWL", deviceCode: "COMIDA-1A2B3C", petId: PET_ID },
+    });
+    expect(prismaMock.device.create).toHaveBeenCalledWith({
+      data: { type: "WATER_BOWL", deviceCode: "AGUA-1A2B3C", petId: PET_ID },
+    });
+    expect(result.devices).toHaveLength(2);
+  });
+
+  it("estação já vinculada a outro pet dá 409 e não cria nada", async () => {
+    setupOk();
+    prismaMock.device.findMany.mockResolvedValue([{ id: "x", petId: "outro-pet", deviceCode: "COMIDA-1A2B3C" }]);
+
+    await expect(createStation(PET_ID, TUTOR_ID, STATION)).rejects.toMatchObject({ statusCode: 409 });
+    expect(prismaMock.device.create).not.toHaveBeenCalled();
+  });
+
+  it("pet que já tem pote de comida ou de água não aceita a estação (409)", async () => {
+    setupOk();
+    prismaMock.device.findFirst.mockResolvedValue({ id: "y", petId: PET_ID, type: "WATER_BOWL" });
+
+    await expect(createStation(PET_ID, TUTOR_ID, STATION)).rejects.toMatchObject({
+      statusCode: 409,
+      message: "Este pet já tem um pote de água vinculado. Remova o atual antes de adicionar outro",
+    });
+    expect(prismaMock.device.create).not.toHaveBeenCalled();
+  });
+
+  it("pet de outro tutor dá 403", async () => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet({ tutorId: OTHER_TUTOR_ID }));
+
+    await expect(createStation(PET_ID, TUTOR_ID, STATION)).rejects.toMatchObject({ statusCode: 403 });
   });
 });
