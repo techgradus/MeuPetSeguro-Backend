@@ -18,6 +18,7 @@ export const prismaMock = {
   device: model(),
   vaccine: model(),
   alert: model(),
+  sensorReading: model(),
   passwordReset: model(),
   $queryRaw: vi.fn(),
   $transaction: vi.fn(),

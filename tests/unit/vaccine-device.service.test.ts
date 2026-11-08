@@ -60,4 +60,33 @@ describe("device.service", () => {
     await expect(createDevice(PET_ID, TUTOR_ID, data)).rejects.toMatchObject({ statusCode: 409, message });
     expect(prismaMock.device.create).not.toHaveBeenCalled();
   });
+
+  it.each([
+    ["COLLAR", "Este pet já tem uma coleira vinculada. Remova a atual antes de adicionar outra"],
+    ["FOOD_BOWL", "Este pet já tem um pote de comida vinculado. Remova o atual antes de adicionar outro"],
+    ["WATER_BOWL", "Este pet já tem um pote de água vinculado. Remova o atual antes de adicionar outro"],
+  ] as const)("pet que já tem %s não aceita outro do mesmo tipo (409)", async (type, message) => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet());
+    prismaMock.device.findUnique.mockResolvedValue(null);
+    prismaMock.device.findFirst.mockResolvedValue({ id: "d0", petId: PET_ID, type });
+
+    await expect(createDevice(PET_ID, TUTOR_ID, { type, deviceCode: "NOVO-01" })).rejects.toMatchObject({
+      statusCode: 409,
+      message,
+    });
+    expect(prismaMock.device.findFirst).toHaveBeenCalledWith({ where: { petId: PET_ID, type } });
+    expect(prismaMock.device.create).not.toHaveBeenCalled();
+  });
+
+  it("corrida: duas requisições juntas, o índice único do banco barra a segunda (409)", async () => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet());
+    prismaMock.device.findUnique.mockResolvedValue(null);
+    // 1ª checagem: livre. Depois do erro P2002 do banco: o outro dispositivo já aparece.
+    prismaMock.device.findFirst
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ id: "d0", petId: PET_ID, type: "COLLAR" });
+    prismaMock.device.create.mockRejectedValue({ code: "P2002" });
+
+    await expect(createDevice(PET_ID, TUTOR_ID, data)).rejects.toMatchObject({ statusCode: 409 });
+  });
 });
