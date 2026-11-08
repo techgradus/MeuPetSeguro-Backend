@@ -88,6 +88,7 @@ model Device {
 
   readings SensorReading[]
 
+  @@unique([petId, type])
   @@index([petId])
   @@map("devices")
 }

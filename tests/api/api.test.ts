@@ -129,6 +129,21 @@ describe("pets e dispositivos", () => {
     expect(repeated.status).toBe(409);
   });
 
+  it("POST /pets/:petId/devices não aceita um segundo dispositivo do mesmo tipo (409)", async () => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet());
+    prismaMock.device.findUnique.mockResolvedValue(null);
+    prismaMock.device.findFirst.mockResolvedValue({ id: "d1", petId: PET_ID, type: "FOOD_BOWL" });
+
+    const res = await request(app)
+      .post(`/api/pets/${PET_ID}/devices`)
+      .set("Authorization", authHeader())
+      .send({ type: "FOOD_BOWL", deviceCode: "esp32-02" });
+
+    expect(res.status).toBe(409);
+    expect(res.body.error).toBe("Este pet já tem um pote de comida vinculado. Remova o atual antes de adicionar outro");
+    expect(prismaMock.device.create).not.toHaveBeenCalled();
+  });
+
   it("rota inexistente devolve 404", async () => {
     const res = await request(app).get("/api/nao-existe");
     expect(res.status).toBe(404);
