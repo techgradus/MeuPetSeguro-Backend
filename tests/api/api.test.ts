@@ -144,6 +144,31 @@ describe("pets e dispositivos", () => {
     expect(prismaMock.device.create).not.toHaveBeenCalled();
   });
 
+  it("POST /pets/:petId/devices/station vincula a estação (201) e valida o código", async () => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet());
+    prismaMock.device.findMany.mockResolvedValue([]);
+    prismaMock.device.findFirst.mockResolvedValue(null);
+    prismaMock.device.create.mockImplementation(async ({ data }: { data: object }) => ({ id: "d", ...data }));
+    prismaMock.$transaction.mockImplementation(async (ops: Promise<unknown>[]) => Promise.all(ops));
+
+    const ok = await request(app)
+      .post(`/api/pets/${PET_ID}/devices/station`)
+      .set("Authorization", authHeader())
+      .send({ stationCode: "estacao-1a2b3c" });
+
+    expect(ok.status).toBe(201);
+    expect(ok.body.stationCode).toBe("ESTACAO-1A2B3C");
+    expect(ok.body.devices).toHaveLength(2);
+
+    const invalid = await request(app)
+      .post(`/api/pets/${PET_ID}/devices/station`)
+      .set("Authorization", authHeader())
+      .send({ stationCode: "COMIDA-1A2B3C" });
+
+    expect(invalid.status).toBe(400);
+    expect(invalid.body.error).toBe("Código da estação inválido. Exemplo: ESTACAO-1A2B3C");
+  });
+
   it("rota inexistente devolve 404", async () => {
     const res = await request(app).get("/api/nao-existe");
     expect(res.status).toBe(404);

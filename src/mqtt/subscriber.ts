@@ -46,7 +46,13 @@ export const startMqttSubscriber = () => {
   });
 
   client.on("reconnect", () => console.log("[MQTT] Reconectando..."));
-  client.on("error", (err) => console.error("[MQTT] Erro de conexão:", describeError(err)));
+  client.on("error", (err) => {
+    const reason = describeError(err);
+    const hint = /not authorized|bad user ?name|password/i.test(reason)
+      ? " — o broker recusou o login"
+      : "";
+    console.error("[MQTT] Erro de conexão:", reason + hint);
+  });
 
   client.on("message", async (topic, payload) => {
     const deviceCode = parseDeviceCode(topic);
