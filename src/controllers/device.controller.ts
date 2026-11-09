@@ -1,12 +1,22 @@
 import { Request, Response, NextFunction } from "express";
-import { createDeviceSchema } from "../validators/device.validator";
-import { createDevice, getDevicesByPet, getDeviceById, deleteDevice } from "../services/device.service";
+import { createDeviceSchema, createStationSchema } from "../validators/device.validator";
+import { createDevice, createStation, getDevicesByPet, getDeviceById, deleteDevice } from "../services/device.service";
 
 export const create = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data = createDeviceSchema.parse(req.body);
     const device = await createDevice(req.params.petId, req.userId!, data);
     return res.status(201).json(device);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createStationDevices = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { stationCode } = createStationSchema.parse(req.body);
+    const station = await createStation(req.params.petId, req.userId!, stationCode);
+    return res.status(201).json(station);
   } catch (error) {
     next(error);
   }
