@@ -10,7 +10,7 @@ import { Scenario, SCENARIOS } from "./routine";
  *   npm run mqtt:simulate
  *   npm run mqtt:simulate -- --scenario doente        (normal | doente | sede)
  *   npm run mqtt:simulate -- --pet <petId>            (só um pet)
- *   npm run mqtt:simulate -- --exclude CODIGO1,CODIGO2 (códigos de dispositivos reais, a não simular)
+ *   npm run mqtt:simulate -- --exclude CODIGO1,CODIGO2 (opcional: simulados que você quer pausar)
  */
 const args = process.argv.slice(2);
 const arg = (name: string) => {
@@ -36,7 +36,7 @@ if (!SCENARIOS.includes(scenario)) {
 
 const loadDevices = async (): Promise<SimDevice[]> => {
   const devices = await prisma.device.findMany({
-    where: onlyPet ? { petId: onlyPet } : undefined,
+    where: { source: "SIMULATED", ...(onlyPet ? { petId: onlyPet } : {}) },
     select: { deviceCode: true, type: true, petId: true, pet: { select: { name: true } } },
   });
 
@@ -92,7 +92,7 @@ const main = () => {
 
   console.log(
     `Simulador de dispositivos rodando (cenário: ${scenario}; leitura a cada ${intervalS}s). Ctrl+C para parar.\n` +
-      "Vincule uma coleira, um pote de comida ou de água a um pet no app e ele aparece aqui sozinho.\n"
+      "Cadastre um dispositivo SIMULADO no app (Novo dispositivo > Simulado) e ele aparece aqui sozinho.\n"
   );
 };
 

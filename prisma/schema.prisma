@@ -73,10 +73,16 @@ enum DeviceStatus {
   OFFLINE
 }
 
+enum DeviceSource {
+  REAL
+  SIMULATED
+}
+
 model Device {
   id           String       @id @default(uuid())
   type         DeviceType
   deviceCode   String       @unique
+  source       DeviceSource @default(REAL)
   status       DeviceStatus @default(OFFLINE)
   batteryLevel Int?
   lastSyncAt   DateTime?

@@ -47,6 +47,15 @@ describe("createDeviceSchema", () => {
     });
   });
 
+  it("aceita a origem do dispositivo (REAL ou SIMULATED) e rejeita outra", () => {
+    expect(createDeviceSchema.parse({ type: "COLLAR", deviceCode: "colar-sim4f9k", source: "SIMULATED" })).toEqual({
+      type: "COLLAR",
+      deviceCode: "COLAR-SIM4F9K",
+      source: "SIMULATED",
+    });
+    expect(createDeviceSchema.safeParse({ type: "COLLAR", deviceCode: "x", source: "FAKE" }).success).toBe(false);
+  });
+
   it("rejeita tipo desconhecido", () => {
     const result = createDeviceSchema.safeParse({ type: "TV", deviceCode: "x" });
     expect(firstError(result)).toMatch(/Tipo de dispositivo inválido/);

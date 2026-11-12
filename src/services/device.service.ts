@@ -2,7 +2,7 @@ import { prisma } from "../config/prisma";
 import { CreateDeviceInput, STATION_PREFIX } from "../validators/device.validator";
 import { DeviceNotFoundError, DeviceAlreadyLinkedError, DeviceTypeAlreadyLinkedError } from "../errors";
 import { findPetOrThrow } from "./pet.service";
-import { DeviceType } from "@prisma/client";
+import { DeviceSource, DeviceType } from "@prisma/client";
 
 const assertCanLink = async (petId: string, data: CreateDeviceInput) => {
   const sameCode = await prisma.device.findUnique({ where: { deviceCode: data.deviceCode } });
@@ -61,7 +61,12 @@ const assertStationCanLink = async (petId: string, foodCode: string, waterCode: 
   }
 };
 
-export const createStation = async (petId: string, tutorId: string, stationCode: string) => {
+export const createStation = async (
+  petId: string,
+  tutorId: string,
+  stationCode: string,
+  source: DeviceSource = DeviceSource.REAL
+) => {
   await findPetOrThrow(petId, tutorId);
 
   const { foodCode, waterCode } = stationCodes(stationCode);
@@ -69,8 +74,8 @@ export const createStation = async (petId: string, tutorId: string, stationCode:
 
   try {
     const devices = await prisma.$transaction([
-      prisma.device.create({ data: { type: DeviceType.FOOD_BOWL, deviceCode: foodCode, petId } }),
-      prisma.device.create({ data: { type: DeviceType.WATER_BOWL, deviceCode: waterCode, petId } }),
+      prisma.device.create({ data: { type: DeviceType.FOOD_BOWL, deviceCode: foodCode, petId, source } }),
+      prisma.device.create({ data: { type: DeviceType.WATER_BOWL, deviceCode: waterCode, petId, source } }),
     ]);
 
     return { stationCode, devices };
