@@ -14,8 +14,8 @@ export const create = async (req: Request, res: Response, next: NextFunction) =>
 
 export const createStationDevices = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { stationCode } = createStationSchema.parse(req.body);
-    const station = await createStation(req.params.petId, req.userId!, stationCode);
+    const { stationCode, source } = createStationSchema.parse(req.body);
+    const station = await createStation(req.params.petId, req.userId!, stationCode, source);
     return res.status(201).json(station);
   } catch (error) {
     next(error);

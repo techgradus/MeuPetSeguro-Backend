@@ -50,6 +50,17 @@ describe("device.service", () => {
     expect(prismaMock.device.create).toHaveBeenCalledWith({ data: { ...data, petId: PET_ID } });
   });
 
+  it("vincula dispositivo simulado repassando o source", async () => {
+    prismaMock.pet.findUnique.mockResolvedValue(pet());
+    prismaMock.device.findUnique.mockResolvedValue(null);
+    prismaMock.device.create.mockResolvedValue({ id: "d2" });
+    const simulated = { ...data, source: "SIMULATED" as const };
+
+    await createDevice(PET_ID, TUTOR_ID, simulated);
+
+    expect(prismaMock.device.create).toHaveBeenCalledWith({ data: { ...simulated, petId: PET_ID } });
+  });
+
   it.each([
     [PET_ID, "Este dispositivo já está vinculado a este pet"],
     ["outro-pet", "Este dispositivo já está vinculado a outro pet. Desvincule-o antes de usar aqui"],
@@ -110,12 +121,25 @@ describe("device.service — estação de potes", () => {
     expect(result.stationCode).toBe(STATION);
     expect(prismaMock.device.create).toHaveBeenCalledTimes(2);
     expect(prismaMock.device.create).toHaveBeenCalledWith({
-      data: { type: "FOOD_BOWL", deviceCode: "COMIDA-1A2B3C", petId: PET_ID },
+      data: { type: "FOOD_BOWL", deviceCode: "COMIDA-1A2B3C", petId: PET_ID, source: "REAL" },
     });
     expect(prismaMock.device.create).toHaveBeenCalledWith({
-      data: { type: "WATER_BOWL", deviceCode: "AGUA-1A2B3C", petId: PET_ID },
+      data: { type: "WATER_BOWL", deviceCode: "AGUA-1A2B3C", petId: PET_ID, source: "REAL" },
     });
     expect(result.devices).toHaveLength(2);
+  });
+
+  it("estação simulada grava os dois potes com source SIMULATED", async () => {
+    setupOk();
+
+    await createStation(PET_ID, TUTOR_ID, "ESTACAO-SIM4F9K", "SIMULATED");
+
+    expect(prismaMock.device.create).toHaveBeenCalledWith({
+      data: { type: "FOOD_BOWL", deviceCode: "COMIDA-SIM4F9K", petId: PET_ID, source: "SIMULATED" },
+    });
+    expect(prismaMock.device.create).toHaveBeenCalledWith({
+      data: { type: "WATER_BOWL", deviceCode: "AGUA-SIM4F9K", petId: PET_ID, source: "SIMULATED" },
+    });
   });
 
   it("estação já vinculada a outro pet dá 409 e não cria nada", async () => {
